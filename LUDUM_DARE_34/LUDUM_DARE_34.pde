@@ -18,10 +18,13 @@ color fgColor = #FFCC66;
 color ball1Color = #F54080;
 color ball2Color = #40B7F5;
 
-ArrayList<Bullet> bullets = new ArrayList<Bullet>(); //type casting \o/
-ArrayList<Particle> particles = new ArrayList<Particle>(); //type casting \o/
+ArrayList<Bullet>   bullets   = new ArrayList<Bullet>(); //type casting \o/
+ArrayList<Particle> particles = new ArrayList<Particle>();
+ArrayList<Enemy>    enemies   = new ArrayList<Enemy>();
 
 long lastFireMillis = 0;
+
+float screenshakeAmount = 0;
 
 void setup() {
   size(800,600);
@@ -51,6 +54,9 @@ void draw() {
     }
   }
   
+  screenshakeAmount += (0-screenshakeAmount) * 0.1;
+  translate(random(-screenshakeAmount,screenshakeAmount),random(-screenshakeAmount,screenshakeAmount));
+  
   //MAIN MENU//////////////////////////////////////////////////////////////////////////////////////
   if(gameState == 0) {
     // draw title
@@ -71,8 +77,9 @@ void draw() {
     translate((width/2 - mouseX)*0.1,(height/2 - mouseY)*0.1); //"Camera"
     
     if(mousePressed && ((millis() - lastFireMillis) > 100)) {
-      bullets.add(new Bullet(width/2,height/2,mouseX,mouseY,5,mouseButton));
+      bullets.add(new Bullet(width/2,height/2,mouseX,mouseY,5+(dist(mouseX,mouseY,width/2,height/2)/30f),mouseButton));
       lastFireMillis = millis();
+      screenshakeAmount = 5+(dist(mouseX,mouseY,width/2,height/2)/10f);
     }
     
     for(int i=bullets.size()-1;i >= 0; i--) {

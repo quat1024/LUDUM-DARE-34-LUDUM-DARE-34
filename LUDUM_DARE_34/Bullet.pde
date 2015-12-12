@@ -5,6 +5,8 @@ class Bullet { //mullet
   int c = 0;
   color myColor;
   
+  int oldness = 0;
+  
   Bullet(float x, float y, float xt, float yt, float s, int buddon) {
     pos = new PVector(x,y);
     float theta = atan2(yt-y,xt-x);
@@ -21,8 +23,12 @@ class Bullet { //mullet
   
   void update() {
     pos.add(vel);
-    
-    particles.add(new TriangleParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.3,0.3),myColor));
+    oldness++;
+    if(oldness > 5) {
+      for(int i=0; i < vel.mag()/6; i++) {
+        particles.add(new TriangleParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.8,0.8),myColor));
+      }
+    }
   }
   
   void draw() {

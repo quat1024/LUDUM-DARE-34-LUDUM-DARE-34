@@ -50,13 +50,13 @@ class Button {
     
     //box
     rectMode(CENTER);
-    stroke(lerpColor(bgColor,fgColor,effect));
+    stroke(lerpColor(bgColor,ball2Color,effect));
     strokeWeight(3);
     rect(0,0,w,h);
     
     //wordz
     textAlign(CENTER,CENTER);
-    fill(lerpColor(bgColor,fgColor,effect));
+    fill(lerpColor(bgColor,ball1Color,effect));
     textFont(font,h*4);
     scale(0.25);
     text(text,0,0);
