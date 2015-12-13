@@ -57,6 +57,12 @@ String[] deathMessages = {"oops","rip","dang","whups","ouch","D:","dang it","dar
 String[] resetMessages = {"Try again","Retry","1 more go","Restart","Rewind","Okay","   :(   ","Again"};
 String resetMessage = "asdfghjkl";
 String deathMessage = "asdfghjkl";
+
+int[] mouseTrailX = new int[10];
+int[] mouseTrailY = new int[10];
+
+boolean lastMouseButton;
+
 void setup() {
   size(900,900);
   textAlign(CENTER,CENTER);
@@ -125,10 +131,12 @@ void draw() {
   //MAIN MENU//////////////////////////////////////////////////////////////////////////////////////
   if(gameState == 0) {
     // draw title
-    fill(fgColor);
-    textFont(font,80);
-    textAlign(CENTER,CENTER);
-    text("my game!!!!!!!!", width/2, height/3);
+    for(int i=0; i < 5; i++) {
+      fill(lerpColor(#000000,fgColor,i/5f));
+      textFont(font,80);
+      textAlign(CENTER,CENTER);
+      text("Center", width/2, (height/3)+i*5);
+    }
     
     //draw buddons
     playButton.updateAndDraw();
@@ -249,6 +257,32 @@ void draw() {
   
   popMatrix();
   
+  
+  if(mousePressed) {
+    lastMouseButton = mouseButton == LEFT;
+  }
+  
+  //mouse trail
+  for(int i=mouseTrailX.length-2; i > -1; i--) {
+    mouseTrailX[i+1] = mouseTrailX[i];
+    mouseTrailY[i+1] = mouseTrailY[i];
+  }
+  mouseTrailX[0] = mouseX;
+  mouseTrailY[0] = mouseY;
+  
+  if(lastMouseButton) {
+    stroke(ball1Color);
+  } else {
+    stroke(ball2Color);
+  }
+  strokeWeight(3);
+  noFill();
+  beginShape();
+  for(int i=0; i < mouseTrailX.length; i++) {
+    curveVertex(mouseTrailX[i],mouseTrailY[i]);
+  }
+  endShape();
+  
   //Mouse
   translate(mouseX,mouseY);
   fill(bgColor);
@@ -359,4 +393,8 @@ void mousePressed() { //Dirty mousePressed fix for multiple buttons.
 
 void mouseReleased() {
   mouseButtonsPressed--;
+}
+
+void keyPressed() {
+  saveFrame(millis()+".png");
 }
