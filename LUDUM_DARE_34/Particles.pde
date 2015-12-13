@@ -9,7 +9,7 @@ interface Particle {
   void updateAndDraw();
 }
 
-class TriangleParticle implements Particle {
+class TriangleParticle implements Particle, MovingThing {
   PVector pos;
   PVector vel;
   float r;
@@ -19,6 +19,8 @@ class TriangleParticle implements Particle {
   PVector corner1, corner2, corner3;
   
   color c;
+  
+  boolean drawWithStroke = false; //if you know what i'm saying bby ;)
   
   TriangleParticle(float x, float y, float s, float new_r, color ccccc) {
     pos = new PVector(x,y);
@@ -34,6 +36,8 @@ class TriangleParticle implements Particle {
     corner2 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
     angle = random(2*TAU/3,TAU);
     corner3 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
+    
+    drawWithStroke = random(1f)>0.7;
   }
   
   void update() {
@@ -46,6 +50,12 @@ class TriangleParticle implements Particle {
   
   void draw() {
     fill(c,age*10);
+    if(drawWithStroke) {
+      stroke(160,100);
+      strokeWeight(1);
+    } else {
+      noStroke();
+    }
     pushMatrix();
     translate(pos.x,pos.y);
     rotate(r);

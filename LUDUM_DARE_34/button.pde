@@ -10,6 +10,8 @@ class Button {
   
   boolean isClicked = false;
   
+  float myRotate = 0.1;
+  
   Button(float xx, float yy, float ww, float hh, String hehehe) {
     x = xx;
     y = yy;
@@ -29,6 +31,11 @@ class Button {
   
   void update() {
     if((mouseX > (x - (w/2))) && (mouseX < (x + (w/2))) && (mouseY > (y - (h/2))) && (mouseY < (y + (h/2)))) {
+      if(effectTarget == 0) {
+        myRotate = random(0.5,3.0);
+        if(random(1f)>0.5)myRotate *= -1;
+      }
+      
       effectTarget = 1;
       isClicked = mousePressed;
     } else {
@@ -45,7 +52,7 @@ class Button {
     
     //magic hover effects
     scale(effect+1);
-    rotate(effect/10);
+    rotate((effect/10) * myRotate);
     fill(lerpColor(fgColor,bgColor,effect));
     
     //box

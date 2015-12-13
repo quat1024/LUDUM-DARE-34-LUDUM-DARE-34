@@ -1,4 +1,4 @@
-class Bullet { //mullet
+class Bullet implements MovingThing { //mullet
   PVector pos;
   PVector vel;
   
@@ -6,6 +6,8 @@ class Bullet { //mullet
   color myColor;
   
   int oldness = 0;
+  
+  int siz = 10;
   
   Bullet(float x, float y, float xt, float yt, float s, int buddon) {
     pos = new PVector(x,y);
@@ -26,7 +28,8 @@ class Bullet { //mullet
     oldness++;
     if(oldness > 5) {
       for(int i=0; i < vel.mag()/6; i++) {
-        particles.add(new TriangleParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.8,0.8),myColor));
+        Particle p = new TriangleParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.8,0.8),myColor);
+        particles.add(p);
       }
     }
   }
