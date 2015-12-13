@@ -46,6 +46,7 @@ AudioSample lose;
 AudioSample hover;
 AudioSample unhover;
 AudioSample press;
+AudioSample explodespecial;
 
 float spawnChance = 0.06;
 int timeBetweenSpawns = 800;
@@ -57,7 +58,7 @@ String[] resetMessages = {"Try again","Retry","1 more go","Restart","Rewind","Ok
 String resetMessage = "asdfghjkl";
 String deathMessage = "asdfghjkl";
 void setup() {
-  size(700,700);
+  size(900,900);
   textAlign(CENTER,CENTER);
   
   font = loadFont("font.vlw");
@@ -76,6 +77,7 @@ void setup() {
   hover    = minim.loadSample("hover.wav");
   unhover  = minim.loadSample("unhover.wav");
   press    = minim.loadSample("press.wav");
+  explodespecial = minim.loadSample("explodespecial.wav");
   
   //frameRate(5);
   dedTranslateTarget = height*1.3;
@@ -149,16 +151,16 @@ void draw() {
     
     stroke(40,50,80);
     strokeWeight(1);
-    for(int x=-100; x<width+100; x += 50) {
+    for(int x=-200; x<=width+200; x += 50) {
       line(x,-50,x,height+50);
     }
-    for(int y=-100; y<height+100; y += 50) {
+    for(int y=-200; y<=height+200; y += 50) {
       line(-50,y,width+50,y);
     }
     
     //Firing
     if((gameState == 1) && (mouseButtonsPressed != 0) && ((millis() - lastFireMillis) > 100)) {
-      Bullet b = new Bullet(width/2,height/2,mouseX,mouseY,3+(dist(mouseX,mouseY,width/2,height/2)/40f),mouseButton);
+      Bullet b = new Bullet(width/2,height/2,mouseX,mouseY,3+(dist(mouseX,mouseY,width/2,height/2)/30f),mouseButton);
       bullets.add(b);
       lastFireMillis = millis();
       screenshakeAmount += 1+(dist(mouseX,mouseY,width/2,height/2)/10f);
@@ -176,8 +178,10 @@ void draw() {
       
       if(n < 0.9) {
         enemies.add(new CircleEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
-      } else {//if(n < 0.95) {
+      } else if(n < 0.95) {
         enemies.add(new SquareEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
+      } else {
+        enemies.add(new TriangleEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
       }
       lastSpawnMillis = millis();
     }
@@ -229,6 +233,8 @@ void draw() {
       fill(fgColor);
       textFont(font,60);
       text(deathMessage,width/4,height/2);
+      textFont(font,30);
+      text("Score: " + score, width/4, (height/2)+70);
       resetButton.updateAndDraw();
       
       if(abs(dedTranslate-dedTranslateTarget) < 5 && resetButton.isClicked) {
@@ -293,20 +299,35 @@ void checkCollision() {
         for(int k=0; k<(s/2)*particlesMult; k++) {
           particles.add(new ShapeParticle(where.x,where.y,random(s/6,s/4),random(TWO_PI),o.getColor(),1));
         }
+        
+        if(o instanceof TriangleEnemy) {
+          for(int qqqw=0; qqqw<floor(random(3,5)); qqqw++) {
+            enemies.add(new CircleEnemy(where.x,where.y,random(TWO_PI),random(4,9),true));
+          }
+          score += 200;
+          explodespecial.trigger();
+        }
+        
+        if(o instanceof SquareEnemy) {
+          explodespecial.trigger();
+          score += 100;
+        }
+        
         screenshakeAmount += s/6;
         enemies.remove(i);
         bullets.remove(j);
         explode2.trigger();
-        spawnChance += 0.02; //Make it a little bit harder
-        timeBetweenSpawns = max(400,timeBetweenSpawns-10);
+        spawnChance += 0.01; //Make it a little bit harder
+        timeBetweenSpawns = max(400,timeBetweenSpawns-5);
         
         if(gameState == 1) {
-          score += 120-s;
+          score += 240-s;
         }
       }
     }
     
     //check ded collision
+    
     if(gameState == 1 && o.boundsCheck(new PVector(width/2,height/2),20)) {
       gameState = 3;
       gameStateNext = 3;
@@ -338,12 +359,4 @@ void mousePressed() { //Dirty mousePressed fix for multiple buttons.
 
 void mouseReleased() {
   mouseButtonsPressed--;
-}
-
-void keyPressed() {
-  float angg = random(0,TWO_PI);
-      float x = 900*cos(angg)+width/2;
-      float y = 900*sin(angg)+height/2;
-      float angToCenter = atan2((height/2)-y,(width/2)-x);
-      enemies.add(new SquareEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
 }

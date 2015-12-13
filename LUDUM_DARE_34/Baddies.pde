@@ -31,7 +31,25 @@ class CircleEnemy implements Enemy, MovingThing {
   int c=0;
   color myColor;
   
+  int asdf = 0;
+  
   CircleEnemy(float x, float y, float ang, float s) {
+    pos = new PVector(x,y);
+    vel = new PVector(s*cos(ang),s*sin(ang));
+    
+    siz = pow(random(14,35),1.3);
+    
+    if(random(1f) > 0.5)c=1;
+    
+    if(c == 0) {
+      myColor = ball1Color;
+    } else {
+      myColor = ball2Color;
+    }
+    asdf = 69;
+  }
+  
+  CircleEnemy(float x, float y, float ang, float s, boolean special) {
     pos = new PVector(x,y);
     vel = new PVector(s*cos(ang),s*sin(ang));
     
@@ -48,6 +66,12 @@ class CircleEnemy implements Enemy, MovingThing {
   
   void update() {
     pos.add(vel);
+    asdf++;
+    if(asdf == 50) {
+      float ang = atan2(pos.y-(height/2),pos.x-(width/2))+PI;
+      vel.rotate(ang-vel.heading());
+      vel.mult(0.2);
+    }
   }
   
   void draw() {
