@@ -12,6 +12,9 @@ class Button {
   
   float myRotate = 0.1;
   
+  boolean enableClick = true;
+  boolean oldHover = false;
+  
   Button(float xx, float yy, float ww, float hh, String hehehe) {
     x = xx;
     y = yy;
@@ -35,13 +38,23 @@ class Button {
         myRotate = random(0.5,3.0);
         if(random(1f)>0.5)myRotate *= -1;
       }
-      
+      if(oldHover == false) {
+        hover.trigger();
+        oldHover = true;
+      }
       effectTarget = 1;
-      isClicked = mousePressed;
+      isClicked = mousePressed && enableClick;
     } else {
       effectTarget = 0;
       isClicked = false;
+      enableClick = true;
+      if(oldHover == true) {
+        unhover.trigger();
+        oldHover = false;
+      }
     }
+    
+    if(!mousePressed)enableClick = true;
     
     effect += (effectTarget - effect)*0.3;
   }
@@ -64,8 +77,7 @@ class Button {
     //wordz
     textAlign(CENTER,CENTER);
     fill(lerpColor(bgColor,ball1Color,effect));
-    textFont(font,h*4);
-    scale(0.25);
+    textFont(font,h*0.9);
     text(text,0,0);
     popMatrix();
   }
@@ -73,5 +85,11 @@ class Button {
   void updateAndDraw() {
     this.update();
     this.draw();
+  }
+  
+  void setText(String s) {
+    textFont(font,h);
+    w = textWidth(s);
+    text = s;
   }
 }

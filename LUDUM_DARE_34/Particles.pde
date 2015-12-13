@@ -9,7 +9,7 @@ interface Particle {
   void updateAndDraw();
 }
 
-class TriangleParticle implements Particle, MovingThing {
+class ShapeParticle implements Particle, MovingThing {
   PVector pos;
   PVector vel;
   float r;
@@ -20,22 +20,29 @@ class TriangleParticle implements Particle, MovingThing {
   
   color c;
   
-  boolean drawWithStroke = false; //if you know what i'm saying bby ;)
+  boolean drawWithStroke = false;
   
-  TriangleParticle(float x, float y, float s, float new_r, color ccccc) {
+  int myShape = 0;
+  
+  ShapeParticle(float x, float y, float s, float new_r, color ccccc, int shape) {
     pos = new PVector(x,y);
     vel = new PVector(cos(new_r)*s,sin(new_r)*s);
     age = random(20,50);
     r = new_r;
     rv = random(-0.8,0.8);
     c=ccccc;
-    //generate triangle
-    float angle = random(0,TAU/3);
-    corner1 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
-    angle = random(TAU/3,2*TAU/3);
-    corner2 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
-    angle = random(2*TAU/3,TAU);
-    corner3 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
+    
+    myShape = shape;
+    if(shape == 0) {
+      //generate triangle
+      float angle = random(0,TAU/3);
+      corner1 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
+      angle = random(TAU/3,2*TAU/3);
+      corner2 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
+      angle = random(2*TAU/3,TAU);
+      corner3 = new PVector(cos(angle)*random(5,10),sin(angle)*random(5,10));
+      
+    }
     
     drawWithStroke = random(1f)>0.7;
   }
@@ -49,7 +56,7 @@ class TriangleParticle implements Particle, MovingThing {
   }
   
   void draw() {
-    fill(c,age*10);
+    noFill();
     if(drawWithStroke) {
       stroke(160,100);
       strokeWeight(1);
@@ -59,7 +66,13 @@ class TriangleParticle implements Particle, MovingThing {
     pushMatrix();
     translate(pos.x,pos.y);
     rotate(r);
-    triangle(corner1.x,corner1.y,corner2.x,corner2.y,corner3.x,corner3.y);
+    if(myShape == 0) {
+      fill(c,age*10);
+      triangle(corner1.x,corner1.y,corner2.x,corner2.y,corner3.x,corner3.y);
+    } else if (myShape == 1) {
+      if(!drawWithStroke)fill(c,age*30);
+      ellipse(0,0,age,age);
+    }
     popMatrix();
   }
   

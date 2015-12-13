@@ -27,9 +27,16 @@ class Bullet implements MovingThing { //mullet
     pos.add(vel);
     oldness++;
     if(oldness > 5) {
-      for(int i=0; i < vel.mag()/6; i++) {
-        Particle p = new TriangleParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.8,0.8),myColor);
-        particles.add(p);
+      if(particlesMult != 0) {
+        for(float i=0; i < vel.mag()/6; i+=(1/particlesMult)) {
+          Particle p = null;
+          if(random(1)>0.2) {
+            p = new ShapeParticle(pos.x,pos.y,vel.mag()/3,PI+vel.heading()+random(-0.8,0.8),myColor,0);
+          } else {
+            p = new ShapeParticle(pos.x,pos.y,vel.mag()/1.3,PI+vel.heading()+random(-0.8,0.8),#9514DB,0);
+          }
+          particles.add(p);
+        }
       }
     }
   }
@@ -37,7 +44,7 @@ class Bullet implements MovingThing { //mullet
   void draw() {
     fill(myColor);
     noStroke();
-    ellipse(pos.x,pos.y,10,10);
+    ellipse(pos.x,pos.y,siz,siz);
   }
   
   final int buffer = 80;

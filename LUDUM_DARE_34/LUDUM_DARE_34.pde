@@ -14,11 +14,14 @@ int gameState = 0;
 int gameStateNext = 0;
 float globalTranslateY = 0;
 float globalTranslateYTarget = 0;
+float dedTranslate = 0;
+float dedTranslateTarget = 0;
 
 PFont font;
 
 Button playButton;
 Button settingsButton;
+Button resetButton;
 
 color bgColor = #000000;
 color fgColor = #FFCC66;
@@ -27,7 +30,7 @@ color ball2Color = #40B7F5;
 
 ArrayList<Bullet>   bullets   = new ArrayList<Bullet>(); //type casting \o/
 ArrayList<Particle> particles = new ArrayList<Particle>();
-ArrayList<Enemy>    enemies   = new ArrayList<Enemy>();
+ArrayList<Enemy>    enemies   = new ArrayList<Enemy>();   
 
 long lastFireMillis = 0;
 long lastSpawnMillis = 0;
@@ -38,29 +41,57 @@ int mouseButtonsPressed = 0; //workaround for mousePressed bug
 
 Minim minim;
 AudioSample explode1;
+AudioSample explode2;
+AudioSample lose;
+AudioSample hover;
+AudioSample unhover;
+AudioSample press;
 
+float spawnChance = 0.06;
+int timeBetweenSpawns = 800;
+
+int score = 0;
+
+String[] deathMessages = {"oops","rip","dang","whups","ouch","D:","dang it","darn it","oh no","aww"};
+String[] resetMessages = {"Try again","Retry","1 more go","Restart","Rewind","Okay","   :(   ","Again"};
+String resetMessage = "asdfghjkl";
+String deathMessage = "asdfghjkl";
 void setup() {
-  size(800,600);
+  size(700,700);
   textAlign(CENTER,CENTER);
   
   font = loadFont("font.vlw");
   
   playButton = new Button(width/2,(2*height/3)-50,60,"PLAY");
   settingsButton = new Button(width/2,(2*height/3)+100,60,"SETTINGS");
-  
+  resetButton = new Button(3*width/4,height/2,60,"Try again");
   smooth(8); //antialiasing :D
   
   surface.setTitle("Shh bby is ok");
   
   minim = new Minim(this);
+  explode1 = minim.loadSample("explode.wav");
+  explode2 = minim.loadSample("explode2.wav");
+  lose     = minim.loadSample("lose.wav");
+  hover    = minim.loadSample("hover.wav");
+  unhover  = minim.loadSample("unhover.wav");
+  press    = minim.loadSample("press.wav");
   
   //frameRate(5);
+  dedTranslateTarget = height*1.3;
+  
+  initSettings(); //keeping it all in one file ;)
+  
+  noCursor();
 }
 
 void draw() {
+  pushMatrix();
   background(bgColor);
   translate(0,globalTranslateY*height*1.5);
+  scale(globalTranslateY+1);
   globalTranslateY += (globalTranslateYTarget - globalTranslateY) * 0.08;
+  dedTranslate += (dedTranslateTarget - dedTranslate) * 0.1;
   
   //detect if we're in a screen transition right about now
   if(gameState != gameStateNext) {
@@ -69,10 +100,24 @@ void draw() {
       //switch the game state and slide back down!
       gameState = gameStateNext;
       globalTranslateYTarget = 0;
+      
+      if(gameState == 1) { //switching to play mode?
+        //let's set things up
+        score = 0;
+        spawnChance = 0.06;
+        timeBetweenSpawns = 800;
+        
+        bullets   = new ArrayList<Bullet>();
+        particles = new ArrayList<Particle>();
+        enemies   = new ArrayList<Enemy>();
+        
+        lastSpawnMillis = millis()+1000;
+        dedTranslateTarget = height*1.3;
+      }
     }
   }
   
-  screenshakeAmount += (0-screenshakeAmount) * 0.1;
+  screenshakeAmount += (0-screenshakeAmount) * 0.2;
   translate(random(-screenshakeAmount,screenshakeAmount),random(-screenshakeAmount,screenshakeAmount));
   
   //MAIN MENU//////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +126,7 @@ void draw() {
     fill(fgColor);
     textFont(font,80);
     textAlign(CENTER,CENTER);
-    text("Ayy lmao", width/2, height/3);
+    text("my game!!!!!!!!", width/2, height/3);
     
     //draw buddons
     playButton.updateAndDraw();
@@ -89,10 +134,18 @@ void draw() {
     
     if(playButton.isClicked) {
       gameStateNext = 1;
-      globalTranslateYTarget = -1;
+      globalTranslateYTarget = -1; 
+      press.trigger();
     }
-  } else if(gameState == 1) { //GAMEPLAY SCREEN///////////////////////////////////////////////////////
-    translate((width/2 - mouseX)*0.1,(height/2 - mouseY)*0.1); //"Camera"
+    
+    if(settingsButton.isClicked) {
+      gameStateNext = 2;
+      globalTranslateYTarget = -1;
+      press.trigger();
+    }
+    //      gameplay          player is ded
+  } else if(gameState == 1 || gameState == 3) { //GAMEPLAY SCREEN///////////////////////////////////////////////////////
+    translate((width/2 - mouseX)*0.15,(height/2 - mouseY)*0.15); //"Camera"
     
     stroke(40,50,80);
     strokeWeight(1);
@@ -103,25 +156,34 @@ void draw() {
       line(-50,y,width+50,y);
     }
     
-    if((mouseButtonsPressed != 0) && ((millis() - lastFireMillis) > 100)) {
-      Bullet b = new Bullet(width/2,height/2,mouseX,mouseY,5+(dist(mouseX,mouseY,width/2,height/2)/30f),mouseButton);
+    //Firing
+    if((gameState == 1) && (mouseButtonsPressed != 0) && ((millis() - lastFireMillis) > 100)) {
+      Bullet b = new Bullet(width/2,height/2,mouseX,mouseY,3+(dist(mouseX,mouseY,width/2,height/2)/40f),mouseButton);
       bullets.add(b);
       lastFireMillis = millis();
-      screenshakeAmount = 3+(dist(mouseX,mouseY,width/2,height/2)/10f);
+      screenshakeAmount += 1+(dist(mouseX,mouseY,width/2,height/2)/10f);
+      explode1.trigger();
     }
     
     //Spawn enemies (in a large circle around screen)
-    if((random(1f) > 0.9) && (millis() - lastSpawnMillis) > 800) {
+    if(gameState == 1 && ((random(1f) < spawnChance) && (millis() - lastSpawnMillis) > timeBetweenSpawns)) {
       float angg = random(0,TWO_PI);
       float x = 900*cos(angg)+width/2;
       float y = 900*sin(angg)+height/2;
       float angToCenter = atan2((height/2)-y,(width/2)-x);
-      enemies.add(new CircleEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
+      
+      float n = random(1);
+      
+      if(n < 0.9) {
+        enemies.add(new CircleEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
+      } else {//if(n < 0.95) {
+        enemies.add(new SquareEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
+      }
       lastSpawnMillis = millis();
     }
     
     
-    //Do the thingie!!!
+    //Do the thingie!!! :D:D:D:D::D:D
     tickAll(particles);
     tickAll(bullets);
     tickAll(enemies);
@@ -141,15 +203,60 @@ void draw() {
     noStroke();
     ellipse(width/2,height/2,20,20);
     
+    //secret stats B)
     if(key == 'd') {
       fill(255,0,0);
       textFont(font,30);
       text("bullets in world: " + bullets.size(),360,60);
       text("particles in world: " + particles.size(),360,90);
       text("baddies in world: " + enemies.size(),360,120);
-      text(int(frameRate) + "fps",360,150);
+      text("spawn chance: " + spawnChance,120,150);
+      text("tbs: " + timeBetweenSpawns,500,150);
+      text(int(frameRate) + "fps",360,180);
+      text("score " + score,500,400);
     }
+    
+    if(gameState == 3) { //player dedded
+      fill(0,50);
+      stroke(255,100);
+      strokeWeight((8*abs(sin(millis()/300f)))+4);
+      translate(0,dedTranslate);
+      translate(width/2,height/2);
+      rotate(-0.1);
+      translate(-width/2,-height/2);
+      rectMode(CENTER);
+      rect(width/2,height/2,width*1.3,230);
+      fill(fgColor);
+      textFont(font,60);
+      text(deathMessage,width/4,height/2);
+      resetButton.updateAndDraw();
+      
+      if(abs(dedTranslate-dedTranslateTarget) < 5 && resetButton.isClicked) {
+        gameStateNext = 1;
+        globalTranslateYTarget = -1;
+        press.trigger();
+      }
+    }
+  } else if(gameState == 2) {//Settings//////////////////////////////////////////////////////////////////////
+    renderSettings();
   }
+  
+  popMatrix();
+  
+  //Mouse
+  translate(mouseX,mouseY);
+  fill(bgColor);
+  stroke(255,80);
+  strokeWeight(1);
+  ellipse(0,0,15,15);
+  rotate(millis()/800f);
+  strokeWeight(2);
+  stroke(ball1Color);
+  line(3,0,6,0);
+  line(-3,0,-6,0);
+  stroke(ball2Color);
+  line(0,3,0,6);
+  line(0,-3,0,-6);
 }
 
 void tickAll(ArrayList a) {
@@ -165,18 +272,67 @@ void tickAll(ArrayList a) {
 void checkCollision() {
   //check bullet collision
   for(int i=enemies.size()-1;i >= 0; i--) {
-    Enemy o = (Enemy) enemies.get(i);
+    
+    Enemy o = null;
+    try { 
+      o = (Enemy) enemies.get(i); //<-- dunno why this sometimes fails.
+    } catch (Exception e) {
+      //let's just do a typical Ludum Dare Bandaid Fix (tm)
+      println("Ayylmao");
+      return; //problem solved!
+    }
+    
     for(int j=bullets.size()-1; j >= 0; j--) {
       if(o.boundsCheck(bullets.get(j))) {
+        PVector where = o.getPos();
+        if(where == null) println("Ooops!");
+        float s = o.getSize();
+        for(int k=0; k<s * particlesMult; k++) {
+          particles.add(new ShapeParticle(where.x,where.y,random(s/8,s/6),random(TWO_PI),o.getColor(),0));
+        }
+        for(int k=0; k<(s/2)*particlesMult; k++) {
+          particles.add(new ShapeParticle(where.x,where.y,random(s/6,s/4),random(TWO_PI),o.getColor(),1));
+        }
+        screenshakeAmount += s/6;
         enemies.remove(i);
         bullets.remove(j);
-        return;
+        explode2.trigger();
+        spawnChance += 0.02; //Make it a little bit harder
+        timeBetweenSpawns = max(400,timeBetweenSpawns-10);
+        
+        if(gameState == 1) {
+          score += 120-s;
+        }
+      }
+    }
+    
+    //check ded collision
+    if(gameState == 1 && o.boundsCheck(new PVector(width/2,height/2),20)) {
+      gameState = 3;
+      gameStateNext = 3;
+      dedTranslateTarget = 0;
+      lose.trigger();
+      for(int h=enemies.size()-1; h >= 0; h--) {
+        PVector where = enemies.get(h).getPos();
+        color asdasdasd = enemies.get(h).getColor();
+        float s = enemies.get(h).getSize();
+        for(int k=0; k<s * particlesMult; k++) {
+          particles.add(new ShapeParticle(where.x,where.y,random(s/8,s/6),random(TWO_PI),asdasdasd,0));
+        }
+        for(int k=0; k<(s/2)*particlesMult; k++) {
+          particles.add(new ShapeParticle(where.x,where.y,random(s/6,s/4),random(TWO_PI),asdasdasd,1));
+        }
+        enemies.remove(h);
+        
+        resetMessage = resetMessages[floor(random(0,resetMessages.length))];
+        deathMessage = deathMessages[floor(random(0,deathMessages.length))];
+        resetButton.setText(resetMessage);
       }
     }
   }
 }
 
-void mousePressed() { //Dirty mousePressed fix.
+void mousePressed() { //Dirty mousePressed fix for multiple buttons.
   mouseButtonsPressed++;
 }
 
@@ -185,5 +341,9 @@ void mouseReleased() {
 }
 
 void keyPressed() {
-  enemies.add(new CircleEnemy(mouseX,mouseY,random(TWO_PI),3));
+  float angg = random(0,TWO_PI);
+      float x = 900*cos(angg)+width/2;
+      float y = 900*sin(angg)+height/2;
+      float angToCenter = atan2((height/2)-y,(width/2)-x);
+      enemies.add(new SquareEnemy(x,y,angToCenter+random(-0.02,0.02),random(2,5)));
 }
